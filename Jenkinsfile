@@ -2,8 +2,8 @@ pipeline{
     agent any
 
     environment {
-        VENV_DIR = 'venv'
-        GCP_PROJECT = "mlops-new-447207"
+        VENV_DIR = '"C://Mili//MLOps_Project//Hotel_Reservation//venv'
+        GCP_PROJECT = "udemymlopsproj"
         GCLOUD_PATH = "/var/jenkins_home/google-cloud-sdk/bin"
     }
 

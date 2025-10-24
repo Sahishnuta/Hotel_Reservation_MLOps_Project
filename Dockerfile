@@ -1,21 +1,30 @@
-FROM jenkins/jenkins:lts-jdk17
+# Use a lightweight Python image
+FROM python:slim
 
-USER root
+# Set environment variables to prevent Python from writing .pyc files & Ensure Python output is not buffered
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Update system and install prerequisites
-RUN apt-get update && \
-    apt-get install -y ca-certificates curl
+# Set the working directory
+WORKDIR /app
 
-# Install Docker using the secure method
-RUN install -m 0755 -d /etc/apt/keyrings && \
-    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
-    chmod a+r /etc/apt/keyrings/docker.asc && \
-    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bullseye stable" > /etc/apt/sources.list.d/docker.list && \
-    apt-get update && \
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin && \
-    apt-get clean
+# Install system dependencies required by LightGBM
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Add jenkins user to docker group
-RUN usermod -aG docker jenkins
+# Copy the application code
+COPY . .
 
-USER jenkins
+# Install the package in editable mode
+RUN pip install --no-cache-dir -e .
+
+# Train the model before running the application
+RUN python pipeline/training_pipeline.py
+
+# Expose the port that Flask will run on
+EXPOSE 5000
+
+# Command to run the app
+CMD ["python", "application.py"]
